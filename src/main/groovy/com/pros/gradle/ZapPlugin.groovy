@@ -53,6 +53,7 @@ class ZapPluginExtension {
     def String reportOutputPath = "zapReport"
     def String applicationUrl = ""
     def String activeScanTimeout = "30"
+    def List<String> zapParameters = []
     protected Process zapProc = null
 }
 
@@ -75,10 +76,19 @@ class ZapStart extends DefaultTask {
             if (Os.isFamily(Os.FAMILY_WINDOWS))
             {
                 builder = new ProcessBuilder("java","-jar", "zap.jar", "-daemon", "-port", "${project.zapConfig.proxyPort.toInteger()}")
+				if (project.zapConfig.zapParameters && project.zapConfig.zapParameters.size() > 0) {
+					def commands = builder.command()
+					commands.addAll(project.zapConfig.zapParameters)
+					builder = builder.command(commands)
+				}
             }
             else
             {
-                builder = new ProcessBuilder("/bin/bash", "-c", "java -jar zap.jar -daemon -port ${project.zapConfig.proxyPort.toInteger()}")
+				def additionalParameters = " "
+				if (project.zapConfig.zapParameters && project.zapConfig.zapParameters.size() > 0) {
+					additionalParameters += project.zapConfig.zapParameters.join(" ")
+				}
+                builder = new ProcessBuilder("/bin/bash", "-c", "java -jar zap.jar -daemon -port ${project.zapConfig.proxyPort.toInteger()}" + additionalParameters)
             }
 
             builder.directory(new File(workingDir))
